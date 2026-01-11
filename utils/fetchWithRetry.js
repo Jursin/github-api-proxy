@@ -37,14 +37,28 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 3) => {
         throw error;
       }
       
-      // 速率限制，等待重试
-      if (error.response?.status === 403 && 
-          error.response?.data?.message?.includes('rate limit')) {
-        const resetTime = parseInt(error.response.headers['x-ratelimit-reset']) || 0;
-        const waitTime = Math.max(resetTime - Math.floor(Date.now() / 1000), 0) + 1;
-        console.log(`⏰ 速率限制，等待 ${waitTime} 秒后重试`);
-        await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
-        continue;
+      // 403 处理：区分 Rate Limit 与 Abuse Detection
+      if (error.response?.status === 403) {
+        const message = (error.response?.data?.message || '').toLowerCase();
+        const retryAfterHeader = Number(error.response?.headers?.['retry-after']);
+        const nowSec = Math.floor(Date.now() / 1000);
+
+        // 标准速率限制
+        if (message.includes('rate limit')) {
+          const resetTime = Number(error.response?.headers?.['x-ratelimit-reset']) || 0;
+          const waitTime = Math.max(resetTime - nowSec, 0) + 1;
+          console.log(`⏰ 速率限制，等待 ${waitTime} 秒后重试`);
+          await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+          continue;
+        }
+
+        // Abuse detection，遵循 Retry-After（若无则默认 60s）
+        if (message.includes('abuse')) {
+          const waitTime = Number.isFinite(retryAfterHeader) ? retryAfterHeader : 60;
+          console.log(`⏰ Abuse 防护，等待 ${waitTime} 秒后重试`);
+          await new Promise(resolve => setTimeout(resolve, waitTime * 1000));
+          continue;
+        }
       }
       
       // 429错误（请求过多），指数退避

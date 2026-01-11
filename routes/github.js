@@ -10,12 +10,7 @@ router.get('/repos/:owner/:repo', cacheMiddleware, async (req, res, next) => {
   const cacheKey = `github:${req.originalUrl}`;
   
   try {
-    const data = await fetchWithRetry(url, {
-      headers: {
-        'User-Agent': 'GitHub-API-Proxy',
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
+    const data = await fetchWithRetry(url);
     
     // 设置缓存5分钟
     await setCache(cacheKey, data, 300);
@@ -34,12 +29,7 @@ router.get('/users/:username/repos', cacheMiddleware, async (req, res, next) => 
   const cacheKey = `github:${req.originalUrl}`;
   
   try {
-    const data = await fetchWithRetry(url, {
-      headers: {
-        'User-Agent': 'GitHub-API-Proxy',
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
+    const data = await fetchWithRetry(url);
     
     // 设置缓存2分钟
     await setCache(cacheKey, data, 120);
@@ -58,12 +48,7 @@ router.get('/repos/:owner/:repo/commits', cacheMiddleware, async (req, res, next
   const cacheKey = `github:${req.originalUrl}`;
   
   try {
-    const data = await fetchWithRetry(url, {
-      headers: {
-        'User-Agent': 'GitHub-API-Proxy',
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
+    const data = await fetchWithRetry(url);
     
     // 设置缓存1分钟
     await setCache(cacheKey, data, 60);
@@ -82,12 +67,7 @@ router.get('/repos/:owner/:repo/releases', cacheMiddleware, async (req, res, nex
   const cacheKey = `github:${req.originalUrl}`;
 
   try {
-    const data = await fetchWithRetry(url, {
-      headers: {
-        'User-Agent': 'GitHub-API-Proxy',
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
+    const data = await fetchWithRetry(url);
 
     // 设置缓存2分钟，发布信息不变更频繁
     await setCache(cacheKey, data, 120);
