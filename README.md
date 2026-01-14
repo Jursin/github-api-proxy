@@ -128,6 +128,33 @@ GET /api/github/repos/:owner/:repo/commits
 curl http://localhost:3000/api/github/repos/facebook/react/commits?page=1&per_page=20
 ```
 
+### 获取仓库最后提交时间（东八区格式化）
+
+```
+GET /api/github/repos/:owner/:repo/last_commit
+```
+
+参数：
+- `branch`：分支名称（可选，默认使用仓库的默认分支）
+- `date`：`long`（默认，包含年份），`short`（省略年份）
+- `time`：`long`（默认，包含秒），`short`（省略秒）
+
+说明：
+- 获取指定分支的最新一条 commit 的提交时间
+- 如果未指定 `branch` 参数，将自动使用仓库的默认分支（如 `main` 或 `master`）
+- 返回时间已转换为东八区，格式基础为 `YYYY/MM/DD HH:MM:SS`
+- 示例（默认参数）：`2026/01/14 20:00:00`
+- 示例（`date=short&time=short`）：`01/14 20:00`
+
+示例：
+```bash
+# 获取默认分支最新提交
+curl "http://localhost:3000/api/github/repos/facebook/react/last_commit?date=long&time=short"
+
+# 获取指定分支最新提交
+curl "http://localhost:3000/api/github/repos/facebook/react/last_commit?branch=dev&date=short&time=short"
+```
+
 ### 获取仓库发布（含 assets 下载量）
 
 ```
