@@ -4,7 +4,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
-const redisClient = require('./config/redis');
 const githubRoutes = require('./routes/github');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -34,34 +33,41 @@ app.use('*', (req, res) => {
 // 错误处理中间件
 app.use(errorHandler);
 
-// 启动服务
-const startServer = async () => {
-  try {
-    // 连接Redis
-    await redisClient.connect();
-    console.log('Redis连接成功');
+// 导出app供Vercel Serverless使n用
+module.exports = app;
 
-    app.listen(PORT, () => {
-      console.log(`服务器运行在端口 ${PORT}`);
-      console.log(`健康检查: http://localhost:${PORT}/health`);
-    });
-  } catch (error) {
-    console.error('启动失败:', error);
-    process.exit(1);
-  }
-};
+// 本地开发时启动服务
+if (require.main === module) {
+  const redisClient = require('./config/redis');
 
-// 优雅关闭
-process.on('SIGTERM', async () => {
-  console.log('收到SIGTERM信号，正在关闭服务...');
-  await redisClient.quit();
-  process.exit(0);
-});
+  const startServer = async () => {
+    try {
+      // 连接Redis
+      await redisClient.connect();
+      console.log('Redis连接成功');
 
-process.on('SIGINT', async () => {
-  console.log('收到SIGINT信号，正在关闭服务...');
-  await redisClient.quit();
-  process.exit(0);
-});
+      app.listen(PORT, () => {
+        console.log(`服务器运行在端口 ${PORT}`);
+        console.log(`健康检查: http://localhost:${PORT}/health`);
+      });
+    } catch (error) {
+      console.error('启动失败:', error);
+      process.exit(1);
+    }
+  };
 
-startServer();
+  // 优雅关闭
+  process.on('SIGTERM', async () => {
+    console.log('收到SIGTERM信号，正在关闭服务...');
+    await redisClient.quit();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', async () => {
+    console.log('收到SIGINT信号，正在关闭服务...');
+    await redisClient.quit();
+    process.exit(0);
+  });
+
+  startServer();
+}

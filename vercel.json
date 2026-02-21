@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "functions": {
+    "api/github.js": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "routes": [
+    {
+      "src": "/health",
+      "dest": "/api/github"
+    },
+    {
+      "src": "/api/github/(.*)",
+      "dest": "/api/github"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/github"
+    }
+  ]
+}

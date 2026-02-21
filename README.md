@@ -186,6 +186,61 @@ GET /health
 
 ## 部署
 
+### 🚀 Vercel 部署（推荐）
+
+#### 快速部署步骤
+
+1. **Fork 或将项目上传到 GitHub**
+
+2. **连接 Vercel**
+   - 访问 [Vercel Dashboard](https://vercel.com/dashboard)
+   - 点击"Add New..." → "Project"
+   - 导入你的 GitHub 仓库
+
+3. **配置环境变量**
+   - 在项目设置中添加以下环境变量：
+     - `GITHUB_TOKEN`：GitHub Personal Access Token（[获取方式](https://github.com/settings/tokens)）
+     - `REDIS_URL`（可选）：Redis 连接字符串（如果使用外部 Redis）
+   - 示例：`redis://user:password@hostname:port`
+
+4. **点击 Deploy 部署**
+
+#### 缓存说明
+
+Vercel Serverless 环境指特点：
+- **内存缓存**：每个函数实例内有内存缓存（请求间共享，但实例重启后清空）
+- **持久化缓存**：可选配置 Redis URL 获得跨实例持久缓存（推荐使用 Vercel KV）
+
+如果需要持久化缓存，推荐使用 **Vercel KV**：
+```bash
+# 安装 Vercel CLI
+npm install -g vercel
+
+# 链接项目
+vercel link
+
+# 创建 KV 存储
+vercel env add REDIS_URL
+
+# 部署
+vercel deploy
+```
+
+#### 访问地址
+
+部署成功后，你的 API 将在以下地址可用：
+```
+https://your-project.vercel.app/api/github/repos/:owner/:repo
+https://your-project.vercel.app/health
+```
+
+#### 超时说明
+
+- Vercel 函数最长执行时间：**30 秒**（Pro 计划）
+- 如果 GitHub API 响应过慢，请增加 `GITHUB_TIMEOUT` 环境变量
+
+---
+
 ### 宝塔面板部署
 
 1. 安装 Node.js 版本管理器
