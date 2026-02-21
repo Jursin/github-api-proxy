@@ -1,25 +1,5 @@
 # GitHub API 代理服务
 
-## 项目结构
-```
-github-api-proxy/
-├── server.js              # 主服务文件
-├── package.json           # 项目配置和依赖
-├── .gitignore            # Git忽略文件
-├── README.md             # 项目说明文档
-├── config/               # 配置文件目录
-│   └── redis.js         # Redis配置
-├── middleware/           # 中间件目录
-│   ├── cache.js         # 缓存中间件
-│   └── errorHandler.js  # 错误处理中间件
-├── utils/               # 工具函数目录
-│   ├── fetchWithRetry.js # 重试机制
-│   └── logger.js        # 日志工具
-├── routes/              # 路由目录
-│   └── github.js        # GitHub API路由
-└── pm2.config.js        # PM2配置文件
-```
-
 基于 Node.js + Express + Redis 的 GitHub API 代理服务，解决前端直接调用 GitHub API 不稳定问题。
 
 ## 功能特性
@@ -35,55 +15,9 @@ github-api-proxy/
 
 ### 环境要求
 
-- Node.js 16+
-- Redis 6+
-- npm 或 yarn
-
-### 安装依赖
-
-```bash
-npm install
-```
-
-### 配置环境变量
-
-创建 `.env` 文件：
-
-```env
-PORT=3000
-REDIS_HOST=127.0.0.1
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_URL=
-NODE_ENV=development
-GITHUB_API_TOKEN=ghp_xxx # 可选：使用 GitHub 令牌提高速率限制
-```
-
-### 启动服务
-
-```bash
-# 开发模式
-npm run dev
-
-# 生产模式
-npm start
-```
-
-### 使用 PM2 部署
-
-```bash
-# 安装 PM2
-npm install -g pm2
-
-# 启动服务
-pm2 start server.js --name github-api-proxy
-
-# 查看状态
-pm2 status
-
-# 查看日志
-pm2 logs github-api-proxy
-```
+- Node.js
+- Redis
+- npm
 
 ## API 接口
 
@@ -91,11 +25,6 @@ pm2 logs github-api-proxy
 
 ```
 GET /api/github/repos/:owner/:repo
-```
-
-示例：
-```bash
-curl http://localhost:3000/api/github/repos/facebook/react
 ```
 
 ### 获取用户仓库列表
@@ -108,11 +37,6 @@ GET /api/github/users/:username/repos
 - `page`：页码，默认1
 - `per_page`：每页数量，默认30
 
-示例：
-```bash
-curl http://localhost:3000/api/github/users/octocat/repos?page=1&per_page=10
-```
-
 ### 获取仓库提交记录
 
 ```
@@ -122,11 +46,6 @@ GET /api/github/repos/:owner/:repo/commits
 参数：
 - `page`：页码，默认1
 - `per_page`：每页数量，默认30
-
-示例：
-```bash
-curl http://localhost:3000/api/github/repos/facebook/react/commits?page=1&per_page=20
-```
 
 ### 获取仓库最后提交时间（东八区格式化）
 
@@ -143,17 +62,6 @@ GET /api/github/repos/:owner/:repo/last_commit
 - 获取指定分支的最新一条 commit 的提交时间
 - 如果未指定 `branch` 参数，将自动使用仓库的默认分支（如 `main` 或 `master`）
 - 返回时间已转换为东八区，格式基础为 `YYYY/MM/DD HH:MM:SS`
-- 示例（默认参数）：`2026/01/14 20:00:00`
-- 示例（`date=short&time=short`）：`01/14 20:00`
-
-示例：
-```bash
-# 获取默认分支最新提交
-curl "http://localhost:3000/api/github/repos/facebook/react/last_commit?date=long&time=short"
-
-# 获取指定分支最新提交
-curl "http://localhost:3000/api/github/repos/facebook/react/last_commit?branch=dev&date=short&time=short"
-```
 
 ### 获取仓库发布（含 assets 下载量）
 
@@ -164,11 +72,6 @@ GET /api/github/repos/:owner/:repo/releases
 参数：
 - `page`：页码，默认1
 - `per_page`：每页数量，默认10
-
-示例：
-```bash
-curl http://localhost:3000/api/github/repos/facebook/react/releases?per_page=5
-```
 
 ## 健康检查
 
@@ -183,86 +86,3 @@ GET /health
   "timestamp": "2026-01-01T12:00:00.000Z"
 }
 ```
-
-## 部署
-
-### 🚀 Vercel 部署（推荐）
-
-#### 快速部署步骤
-
-1. **Fork 或将项目上传到 GitHub**
-
-2. **连接 Vercel**
-   - 访问 [Vercel Dashboard](https://vercel.com/dashboard)
-   - 点击"Add New..." → "Project"
-   - 导入你的 GitHub 仓库
-
-3. **配置环境变量**
-   - 在项目设置中添加以下环境变量：
-     - `GITHUB_TOKEN`：GitHub Personal Access Token（[获取方式](https://github.com/settings/tokens)）
-     - `REDIS_URL`（可选）：Redis 连接字符串（如果使用外部 Redis）
-   - 示例：`redis://user:password@hostname:port`
-
-4. **点击 Deploy 部署**
-
-#### 缓存说明
-
-Vercel Serverless 环境指特点：
-- **内存缓存**：每个函数实例内有内存缓存（请求间共享，但实例重启后清空）
-- **持久化缓存**：可选配置 Redis URL 获得跨实例持久缓存（推荐使用 Vercel KV）
-
-如果需要持久化缓存，推荐使用 **Vercel KV**：
-```bash
-# 安装 Vercel CLI
-npm install -g vercel
-
-# 链接项目
-vercel link
-
-# 创建 KV 存储
-vercel env add REDIS_URL
-
-# 部署
-vercel deploy
-```
-
-#### 访问地址
-
-部署成功后，你的 API 将在以下地址可用：
-```
-https://your-project.vercel.app/api/github/repos/:owner/:repo
-https://your-project.vercel.app/health
-```
-
-#### 超时说明
-
-- Vercel 函数最长执行时间：**30 秒**（Pro 计划）
-- 如果 GitHub API 响应过慢，请增加 `GITHUB_TIMEOUT` 环境变量
-
----
-
-### 宝塔面板部署
-
-1. 安装 Node.js 版本管理器
-2. 安装 Redis
-3. 安装 PM2 管理器
-4. 上传项目文件
-5. 在 PM2 管理器中添加项目
-6. 配置反向代理
-
-### Docker 部署
-
-```bash
-docker build -t github-api-proxy .
-docker run -d -p 3000:3000 --name github-api-proxy github-api-proxy
-```
-
-## 性能优化
-
-- 调整缓存时间：根据数据更新频率设置合理的缓存时间
-- 监控内存使用：2G 内存服务器注意监控 Redis 和 Node.js 内存使用
-- 负载均衡：多实例部署时使用 Nginx 负载均衡
-
-## 许可证
-
-MIT License
