@@ -22,52 +22,37 @@ app.get('/', (req, res) => {
     name: 'GitHub API 代理服务',
     version: '1.0.0',
     description: '基于 Node.js + Express 的 GitHub API 代理服务',
+    cacheTTL: {
+      commits: '1分钟',
+      releases: '2分钟',
+      repos: '5分钟',
+      users: '2分钟',
+      default: '5分钟'
+    },
     endpoints: {
       health: {
         method: 'GET',
         path: '/health',
         description: '健康检查'
       },
-      getRepoInfo: {
+      universal_proxy: {
         method: 'GET',
-        path: '/api/github/repos/:owner/:repo',
-        description: '获取仓库信息'
-      },
-      getUserRepos: {
-        method: 'GET',
-        path: '/api/github/users/:username/repos',
-        description: '获取用户仓库列表',
-        params: {
-          page: '页码，默认1',
-          per_page: '每页数量，默认30'
-        }
-      },
-      getRepoCommits: {
-        method: 'GET',
-        path: '/api/github/repos/:owner/:repo/commits',
-        description: '获取仓库提交记录',
-        params: {
-          page: '页码，默认1',
-          per_page: '每页数量，默认30'
-        }
+        path: '* (匹配所有路由)',
+        description: '通用 GitHub API 代理',
+        examples: [
+          'GET /repos/owner/repo - 获取仓库信息',
+          'GET /users/username - 获取用户信息',
+          'GET /search/repositories?q=language:javascript - 搜索仓库'
+        ]
       },
       getLastCommit: {
         method: 'GET',
-        path: '/api/github/repos/:owner/:repo/last_commit',
-        description: '获取仓库最后提交时间（东八区格式化）',
+        path: '/repos/:owner/:repo/last_commit',
+        description: '获取仓库最后提交时间（支持东八区格式化）',
         params: {
           branch: '分支名称（可选，默认使用仓库的默认分支）',
           date: 'long（默认，包含年份）或 short（省略年份）',
           time: 'long（默认，包含秒）或 short（省略秒）'
-        }
-      },
-      getReleases: {
-        method: 'GET',
-        path: '/api/github/repos/:owner/:repo/releases',
-        description: '获取仓库发布（含 assets 下载量）',
-        params: {
-          page: '页码，默认1',
-          per_page: '每页数量，默认10'
         }
       }
     }
@@ -79,7 +64,7 @@ app.get('/health', (req, res) => {
 });
 
 // 路由
-app.use('/api/github', githubRoutes);
+app.use(githubRoutes);
 
 // 404处理
 app.use((req, res) => {

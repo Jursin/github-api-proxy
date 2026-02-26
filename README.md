@@ -16,41 +16,40 @@
 ### 环境要求
 
 - Node.js
-- Redis
 - npm
+- Redis
+
+### 启动开发服务器
+
+```bash
+npm run dev
+```
 
 ## API 接口
 
-### 获取仓库信息
+### 健康检查
 
 ```
-GET /api/github/repos/:owner/:repo
+GET /health
 ```
 
-### 获取用户仓库列表
+### 通用代理（示例）
 
 ```
-GET /api/github/users/:username/repos
+GET /repos/:owner/:repo
+GET /users/:username/repos
+GET /search/repositories?q=language:javascript
 ```
 
-参数：
-- `page`：页码，默认1
-- `per_page`：每页数量，默认30
-
-### 获取仓库提交记录
-
-```
-GET /api/github/repos/:owner/:repo/commits
-```
-
-参数：
-- `page`：页码，默认1
-- `per_page`：每页数量，默认30
+说明：
+- 获取仓库信息
+- 获取用户仓库列表
+- 搜索仓库
 
 ### 获取仓库最后提交时间（东八区格式化）
 
 ```
-GET /api/github/repos/:owner/:repo/last_commit
+GET /repos/:owner/:repo/last_commit
 ```
 
 参数：
@@ -62,27 +61,3 @@ GET /api/github/repos/:owner/:repo/last_commit
 - 获取指定分支的最新一条 commit 的提交时间
 - 如果未指定 `branch` 参数，将自动使用仓库的默认分支（如 `main` 或 `master`）
 - 返回时间已转换为东八区，格式基础为 `YYYY/MM/DD HH:MM:SS`
-
-### 获取仓库发布（含 assets 下载量）
-
-```
-GET /api/github/repos/:owner/:repo/releases
-```
-
-参数：
-- `page`：页码，默认1
-- `per_page`：每页数量，默认10
-
-## 健康检查
-
-```
-GET /health
-```
-
-返回：
-```json
-{
-  "status": "OK",
-  "timestamp": "2026-01-01T12:00:00.000Z"
-}
-```

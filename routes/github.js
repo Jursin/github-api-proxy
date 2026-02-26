@@ -30,64 +30,8 @@ const formatUpdatedAt = (isoString, dateMode = 'long', timeMode = 'long') => {
   return `${datePart} ${timePart}`.trim();
 };
 
-// 获取仓库信息
-router.get('/repos/:owner/:repo', cacheMiddleware, async (req, res, next) => {
-  const { owner, repo } = req.params;
-  const url = `https://api.github.com/repos/${owner}/${repo}`;
-  const cacheKey = `github:${req.originalUrl}`;
-  
-  try {
-    const data = await fetchWithRetry(url);
-    
-    // 设置缓存5分钟
-    await setCache(cacheKey, data, 300);
-    
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// 获取用户仓库列表
-router.get('/users/:username/repos', cacheMiddleware, async (req, res, next) => {
-  const { username } = req.params;
-  const { page = 1, per_page = 30 } = req.query;
-  const url = `https://api.github.com/users/${username}/repos?page=${page}&per_page=${per_page}`;
-  const cacheKey = `github:${req.originalUrl}`;
-  
-  try {
-    const data = await fetchWithRetry(url);
-    
-    // 设置缓存2分钟
-    await setCache(cacheKey, data, 120);
-    
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// 获取仓库提交记录
-router.get('/repos/:owner/:repo/commits', cacheMiddleware, async (req, res, next) => {
-  const { owner, repo } = req.params;
-  const { page = 1, per_page = 30 } = req.query;
-  const url = `https://api.github.com/repos/${owner}/${repo}/commits?page=${page}&per_page=${per_page}`;
-  const cacheKey = `github:${req.originalUrl}`;
-  
-  try {
-    const data = await fetchWithRetry(url);
-    
-    // 设置缓存1分钟
-    await setCache(cacheKey, data, 60);
-    
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-});
-
 // 获取仓库最后提交时间（格式化）
-router.get('/repos/:owner/:repo/last_commit', cacheMiddleware, async (req, res, next) => {
+const handleLastCommit = async (req, res, next) => {
   const { owner, repo } = req.params;
   const { date = 'long', time = 'long', branch } = req.query;
   const dateMode = ['long', 'short'].includes(String(date)) ? String(date) : 'long';
@@ -151,21 +95,34 @@ router.get('/repos/:owner/:repo/last_commit', cacheMiddleware, async (req, res, 
   } catch (error) {
     next(error);
   }
-});
+};
 
-// 获取仓库发布（含资产下载量）
-router.get('/repos/:owner/:repo/releases', cacheMiddleware, async (req, res, next) => {
-  const { owner, repo } = req.params;
-  const { page = 1, per_page = 10 } = req.query;
-  const url = `https://api.github.com/repos/${owner}/${repo}/releases?page=${page}&per_page=${per_page}`;
+// 根据路径类型确定缓存时间
+const getCacheTTL = (path) => {
+  if (path.includes('/commits')) return 60;      // 提交记录 1 分钟
+  if (path.includes('/releases')) return 120;    // 发布信息 2 分钟
+  if (path.includes('/repos/')) return 300;      // 仓库信息 5 分钟
+  if (path.includes('/users/')) return 120;      // 用户信息 2 分钟
+  return 300; // 默认 5 分钟
+};
+
+// 单独处理 last_commit 端点（具体路由必须在通用路由之前）
+router.get('/repos/:owner/:repo/last_commit', cacheMiddleware, handleLastCommit);
+
+// 通用 GitHub API 代理
+router.get(/.*/i, cacheMiddleware, async (req, res, next) => {
+  const path = req.path; // 获取请求路径
+  const query = new URLSearchParams(req.query).toString();
+  const url = `https://api.github.com${path}${query ? '?' + query : ''}`;
   const cacheKey = `github:${req.originalUrl}`;
+  const ttl = getCacheTTL(path);
 
   try {
     const data = await fetchWithRetry(url);
-
-    // 设置缓存2分钟，发布信息不变更频繁
-    await setCache(cacheKey, data, 120);
-
+    
+    // 根据路径类型设置对应的缓存时间
+    await setCache(cacheKey, data, ttl);
+    
     res.json(data);
   } catch (error) {
     next(error);
